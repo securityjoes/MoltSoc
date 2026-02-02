@@ -1,0 +1,32 @@
+{
+  "id": "moltsoc",
+  "name": "MoltSOC",
+  "description": "Security summary and dashboard link for MoltSOC (OpenClaw monitoring).",
+  "version": "0.1.0",
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "collectorUrl": {
+        "type": "string",
+        "default": "http://127.0.0.1:7777",
+        "description": "MoltSOC collector API base URL (GET /events, GET /health)."
+      },
+      "dashboardUrl": {
+        "type": "string",
+        "default": "http://localhost:5173",
+        "description": "MoltSOC dashboard URL (full UI: timeline, alerts, rules, AI context)."
+      }
+    }
+  },
+  "uiHints": {
+    "collectorUrl": {
+      "label": "Collector API URL",
+      "placeholder": "http://127.0.0.1:7777"
+    },
+    "dashboardUrl": {
+      "label": "Dashboard URL",
+      "placeholder": "http://localhost:5173"
+    }
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "name": "moltsoc-plugin",
+  "version": "0.1.0",
+  "description": "OpenClaw plugin: MoltSOC security summary and dashboard access",
+  "openclaw": {
+    "extensions": ["./index.ts"]
+  }
+}
