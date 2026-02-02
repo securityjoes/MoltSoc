@@ -3,42 +3,15 @@ const STREAM_PATH = '/stream';
 const POLL_MS = 2000;
 
 export const DEFAULT_RULES = [
-  { id: 'GATEWAY_UNREACHABLE', name: 'Gateway unreachable', severity: 'high', threshold: 1, enabled: true },
-  { id: 'MISSING_GATEWAY_TOKEN', name: 'Missing gateway token', severity: 'medium', threshold: 1, enabled: true },
-  { id: 'TOOL_LOOP', name: 'Rapid failures (tool loop)', severity: 'high', threshold: 5, enabled: true },
-  { id: 'PUBLIC_BIND', name: 'Bind 0.0.0.0', severity: 'medium', threshold: 1, enabled: true },
-  { id: 'SUSPICIOUS_COMMAND_PATTERN', name: 'Suspicious command (powershell -enc / IEX)', severity: 'high', threshold: 1, enabled: true },
-  { id: 'PORT_CHANGED', name: 'Port changed', severity: 'low', threshold: 1, enabled: true },
-  { id: 'GATEWAY_RESTART_LOOP', name: 'Gateway restart loop', severity: 'high', threshold: 3, enabled: true },
-  { id: 'AUTH_FAILURE_BURST', name: 'Auth failure burst', severity: 'medium', threshold: 5, enabled: true },
-  { id: 'TOOL_FAILURE_RATE', name: 'Tool failure rate', severity: 'high', threshold: 10, enabled: true }
-];
-
-export const SAMPLE_EVENTS = [
-  { ts: '2025-02-02T12:00:00.000Z', host_id: 'DESKTOP-ABC', bot_id: '', session_id: '', channel_id: '', type: 'config_change', severity: 'info', summary: 'MoltSOC collector started', details: { source: 'openclaw-logs', redact: true } },
-  { ts: '2025-02-02T12:00:30.000Z', host_id: 'DESKTOP-ABC', bot_id: '', session_id: '', channel_id: '', type: 'heartbeat', severity: 'info', summary: 'Collector heartbeat', details: {} },
-  { ts: '2025-02-02T12:01:00.000Z', host_id: 'DESKTOP-ABC', bot_id: 'bot-1', session_id: 'sess-001', channel_id: '', type: 'tool_call', severity: 'info', summary: 'Log line', details: { raw_line_hash: 'a1b2c3d4e5f6' } },
-  { ts: '2025-02-02T12:01:30.000Z', host_id: 'DESKTOP-ABC', bot_id: 'bot-2', session_id: 'sess-002', channel_id: '', type: 'tool_call', severity: 'info', summary: 'Log line', details: { raw_line_hash: 'b2c3d4e5f6a1' } },
-  { ts: '2025-02-02T12:02:00.000Z', host_id: 'DESKTOP-ABC', bot_id: '', session_id: '', channel_id: '', type: 'alert', severity: 'high', summary: 'Gateway unreachable (ECONNREFUSED)', details: { rule: 'GATEWAY_UNREACHABLE', threshold: 1, window: '', evidence: ['ecconnrefused_127.0.0.1_hash'] } },
-  { ts: '2025-02-02T12:02:15.000Z', host_id: 'DESKTOP-ABC', bot_id: '', session_id: '', channel_id: '', type: 'alert', severity: 'medium', summary: 'Missing gateway token warning', details: { rule: 'MISSING_GATEWAY_TOKEN', threshold: 1, window: '', evidence: ['missing_token_line_hash'] } },
-  { ts: '2025-02-02T12:02:30.000Z', host_id: 'DESKTOP-ABC', bot_id: '', session_id: '', channel_id: '', type: 'heartbeat', severity: 'info', summary: 'Collector heartbeat', details: {} },
-  { ts: '2025-02-02T12:03:00.000Z', host_id: 'DESKTOP-ABC', bot_id: 'bot-1', session_id: 'sess-001', channel_id: '', type: 'alert', severity: 'high', summary: 'Rapid repeated failures (tool loop)', details: { rule: 'TOOL_LOOP', threshold: 5, window: '1m', evidence: ['a1b2c3d4e5f6', 'count:6'] } },
-  { ts: '2025-02-02T12:03:20.000Z', host_id: 'DESKTOP-ABC', bot_id: '', session_id: '', channel_id: '', type: 'alert', severity: 'medium', summary: 'Bind to 0.0.0.0 detected', details: { rule: 'PUBLIC_BIND', threshold: 1, window: '', evidence: ['bind_0.0.0.0_hash'] } },
-  { ts: '2025-02-02T12:03:40.000Z', host_id: 'DESKTOP-ABC', bot_id: 'bot-3', session_id: 'sess-003', channel_id: '', type: 'alert', severity: 'high', summary: 'Suspicious command pattern (powershell -enc / IEX / base64)', details: { rule: 'SUSPICIOUS_COMMAND_PATTERN', threshold: 1, window: '', evidence: ['suspicious_cmd_hash'] } },
-  { ts: '2025-02-02T12:04:00.000Z', host_id: 'DESKTOP-ABC', bot_id: '', session_id: '', channel_id: '', type: 'alert', severity: 'low', summary: 'Gateway port changed', details: { rule: 'PORT_CHANGED', threshold: 1, window: '', evidence: ['8080 -> 9090'] } },
-  { ts: '2025-02-02T12:04:20.000Z', host_id: 'DESKTOP-ABC', bot_id: '', session_id: '', channel_id: '', type: 'alert', severity: 'high', summary: 'Gateway restart loop (>3 stop/start in 5 min)', details: { rule: 'GATEWAY_RESTART_LOOP', threshold: 3, window: '5m', evidence: ['2025-02-02T12:00:00.000Z', '2025-02-02T12:01:00.000Z', '2025-02-02T12:02:00.000Z', '2025-02-02T12:03:00.000Z'] } },
-  { ts: '2025-02-02T12:04:40.000Z', host_id: 'DESKTOP-ABC', bot_id: 'bot-2', session_id: 'sess-002', channel_id: '', type: 'alert', severity: 'medium', summary: 'Auth failure burst (>N/min)', details: { rule: 'AUTH_FAILURE_BURST', threshold: 5, window: '1m', evidence: ['2025-02-02T12:04:35.000Z', '2025-02-02T12:04:36.000Z', '2025-02-02T12:04:37.000Z', '2025-02-02T12:04:38.000Z', '2025-02-02T12:04:39.000Z'] } },
-  { ts: '2025-02-02T12:05:00.000Z', host_id: 'DESKTOP-ABC', bot_id: 'bot-1', session_id: 'sess-001', channel_id: '', type: 'alert', severity: 'high', summary: 'Tool error rate (>N/min)', details: { rule: 'TOOL_FAILURE_RATE', threshold: 10, window: '1m', evidence: ['2025-02-02T12:04:50.000Z', '2025-02-02T12:04:52.000Z', '2025-02-02T12:04:54.000Z', '2025-02-02T12:04:56.000Z', '2025-02-02T12:04:58.000Z', '2025-02-02T12:05:00.000Z'] } },
-  { ts: '2025-02-02T12:05:30.000Z', host_id: 'DESKTOP-ABC', bot_id: '', session_id: '', channel_id: '', type: 'heartbeat', severity: 'info', summary: 'Collector heartbeat', details: {} },
-  { ts: '2025-02-02T12:06:00.000Z', host_id: 'DESKTOP-ABC', bot_id: 'bot-1', session_id: 'sess-001', channel_id: '', type: 'gateway_status', severity: 'info', summary: 'Gateway running', details: { state: 'running', port: 7777, bind: '127.0.0.1', token_present: true } },
-  { ts: '2025-02-02T12:06:30.000Z', host_id: 'DESKTOP-ABC', bot_id: 'bot-2', session_id: 'sess-002', channel_id: '', type: 'network_hint', severity: 'low', summary: 'Outbound request', details: { destination: 'api.github.com', domain: 'api.github.com' } },
-  { ts: '2025-02-02T12:07:00.000Z', host_id: 'DESKTOP-ABC', bot_id: 'bot-1', session_id: 'sess-001', channel_id: '', type: 'network_hint', severity: 'low', summary: 'Outbound request', details: { destination: 'api.openai.com', domain: 'api.openai.com' } },
-  { ts: '2025-02-02T12:07:30.000Z', host_id: 'DESKTOP-ABC', bot_id: 'bot-3', session_id: 'sess-003', channel_id: '', type: 'network_hint', severity: 'low', summary: 'Outbound request', details: { destination: '1.2.3.4', ip: '1.2.3.4' } },
-  { ts: '2025-02-02T12:08:00.000Z', host_id: 'DESKTOP-ABC', bot_id: 'bot-2', session_id: 'sess-002', channel_id: '', type: 'network_hint', severity: 'info', summary: 'Outbound request', details: { destination: 'api.github.com', domain: 'api.github.com', asn: '36459' } },
-  { ts: '2025-02-02T12:08:30.000Z', host_id: 'DESKTOP-ABC', bot_id: 'bot-1', session_id: 'sess-001', channel_id: '', type: 'network_hint', severity: 'info', summary: 'Outbound request', details: { destination: 'api.openai.com', domain: 'api.openai.com', asn: '46562' } },
-  { ts: '2025-02-02T12:09:00.000Z', host_id: 'DESKTOP-ABC', bot_id: '', session_id: '', channel_id: '', type: 'error', severity: 'critical', summary: 'RPC failed (from gateway status)', details: { exitCode: 1 } },
-  { ts: '2025-02-02T12:09:30.000Z', host_id: 'DESKTOP-ABC', bot_id: 'bot-3', session_id: 'sess-003', channel_id: '', type: 'config_change', severity: 'info', summary: 'Gateway config updated', details: { port: 9090 } },
-  { ts: '2025-02-02T12:10:00.000Z', host_id: 'DESKTOP-ABC', bot_id: '', session_id: '', channel_id: '', type: 'heartbeat', severity: 'info', summary: 'Collector heartbeat', details: {} }
+  { id: 'GATEWAY_UNREACHABLE', name: 'Gateway unreachable', severity: 'high', threshold: 1, enabled: true, description: 'Fires when OpenClaw logs show ECONNREFUSED to 127.0.0.1 or localhost (gateway not reachable).', examplePayload: 'Error: connect ECONNREFUSED 127.0.0.1:7777' },
+  { id: 'MISSING_GATEWAY_TOKEN', name: 'Missing gateway token', severity: 'medium', threshold: 1, enabled: true, description: 'Fires when logs or CLI status indicate the gateway token is missing.', examplePayload: 'Missing gateway token in config' },
+  { id: 'TOOL_LOOP', name: 'Rapid failures (tool loop)', severity: 'high', threshold: 5, enabled: true, description: 'Same error repeated more than N times within 1 minute (suggests a tool loop or stuck agent).', examplePayload: 'Tool X failed (same hash 6 times in 1m)' },
+  { id: 'PUBLIC_BIND', name: 'Bind 0.0.0.0', severity: 'medium', threshold: 1, enabled: true, description: 'Gateway or server bound to 0.0.0.0 or :::0 (exposed on all interfaces).', examplePayload: 'Gateway listening on 0.0.0.0:7777' },
+  { id: 'SUSPICIOUS_COMMAND_PATTERN', name: 'Suspicious command (powershell -enc / IEX)', severity: 'high', threshold: 1, enabled: true, description: 'Log line contains powershell -enc, -encodedcommand, IEX, or base64 decode patterns often used in obfuscated scripts.', examplePayload: 'powershell -enc JABjAGwAaQBlAG4AdA...' },
+  { id: 'PORT_CHANGED', name: 'Port changed', severity: 'low', threshold: 1, enabled: true, description: 'Gateway port changed between CLI status polls.', examplePayload: 'Port 8080 -> 9090' },
+  { id: 'GATEWAY_RESTART_LOOP', name: 'Gateway restart loop', severity: 'high', threshold: 3, enabled: true, description: 'More than 3 stop/start transitions within 5 minutes (unstable gateway).', examplePayload: 'Stop/start at T0, T1, T2, T3' },
+  { id: 'AUTH_FAILURE_BURST', name: 'Auth failure burst', severity: 'medium', threshold: 5, enabled: true, description: 'Auth failure log lines exceed N per minute.', examplePayload: '5+ "auth failed" lines in 1m' },
+  { id: 'TOOL_FAILURE_RATE', name: 'Tool failure rate', severity: 'high', threshold: 10, enabled: true, description: 'Tool error lines exceed N per minute.', examplePayload: '10+ tool error lines in 1m' }
 ];
 
 export function loadEventsFromFile(file) {

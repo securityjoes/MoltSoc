@@ -1,0 +1,24 @@
+{
+  "name": "moltsoc",
+  "version": "0.2.0",
+  "description": "MoltSOC - local security monitoring for OpenClaw",
+  "private": true,
+  "bin": {
+    "moltsoc": "./cli/index.js"
+  },
+  "scripts": {
+    "install-flow": "node cli/index.js install",
+    "start": "node cli/index.js start",
+    "moltsoc": "node cli/index.js"
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/securityjoes/MoltSoc.git"
+  },
+  "keywords": ["openclaw", "security", "soc", "monitoring"],
+  "author": "Security Joes",
+  "license": "MIT"
+}

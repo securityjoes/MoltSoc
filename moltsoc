@@ -1,0 +1,5 @@
+#!/bin/sh
+# MoltSOC CLI launcher (Unix/macOS/Linux).
+# Usage: ./moltsoc <command> or moltsoc <command> when repo is on PATH.
+ROOT="$(cd "$(dirname "$0")" && pwd)"
+exec node "$ROOT/cli/index.js" "$@"

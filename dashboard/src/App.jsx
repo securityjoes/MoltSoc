@@ -5,7 +5,7 @@ import { Session } from './Session';
 import { MapView } from './MapView';
 import { RulesPanel } from './RulesPanel';
 import { AiContext } from './AiContext';
-import { loadEventsFromFile, connectLive, fetchEvents, DEFAULT_RULES, SAMPLE_EVENTS } from './data';
+import { loadEventsFromFile, connectLive, fetchEvents, DEFAULT_RULES } from './data';
 
 const EVENTS_URL = 'http://127.0.0.1:7777/events';
 const MAX_EVENTS = 10000;
@@ -14,7 +14,7 @@ const OPENCLAW_DASHBOARD_URL = typeof import.meta !== 'undefined' && import.meta
 export default function App() {
   const [events, setEvents] = useState([]);
   const [tab, setTab] = useState('timeline');
-  const [useLive, setUseLive] = useState(false);
+  const [useLive, setUseLive] = useState(true);
   const [endpoint, setEndpoint] = useState(EVENTS_URL);
   const [selectedBot, setSelectedBot] = useState('');
   const [liveError, setLiveError] = useState(null);
@@ -32,6 +32,11 @@ export default function App() {
     const set = new Set();
     events.forEach((e) => { if (e.bot_id) set.add(e.bot_id); });
     return [...set].sort();
+  }, [events]);
+
+  const lastHeartbeat = React.useMemo(() => {
+    const heartbeats = events.filter((e) => e.type === 'heartbeat').sort((a, b) => new Date(b.ts) - new Date(a.ts));
+    return heartbeats[0]?.ts || null;
   }, [events]);
 
   useEffect(() => {
@@ -67,13 +72,6 @@ export default function App() {
     loadEventsFromFile(file).then(setEvents);
   }, []);
 
-  const onLoadSampleData = useCallback(() => {
-    setUseLive(false);
-    setLiveError(null);
-    if (disconnectRef.current) disconnectRef.current();
-    setEvents(SAMPLE_EVENTS);
-  }, []);
-
   const persistRules = useCallback((next) => {
     setRules(next);
     try {
@@ -91,26 +89,25 @@ export default function App() {
     return ['high', 'critical', 'medium'].includes(e.severity);
   });
 
+  const navItems = [
+    { id: 'timeline', label: 'Timeline' },
+    { id: 'alerts', label: 'Alerts' },
+    { id: 'session', label: 'Session' },
+    { id: 'map', label: 'Map' },
+    { id: 'rules', label: 'Rules' },
+    { id: 'ai', label: 'AI context' },
+  ];
+
   return (
     <div className="app">
       <header className="app-header">
-        <h1>MoltSOC v0</h1>
+        <h1>MoltSOC</h1>
         {OPENCLAW_DASHBOARD_URL ? (
           <a href={OPENCLAW_DASHBOARD_URL} target="_blank" rel="noopener noreferrer" className="link-openclaw" title="Open OpenClaw dashboard">
             Open OpenClaw
           </a>
         ) : null}
-        <nav className="tabs">
-          {['timeline', 'alerts', 'session', 'map', 'rules', 'ai'].map((t) => (
-            <button key={t} className={tab === t ? 'active' : ''} onClick={() => setTab(t)}>
-              {t.charAt(0).toUpperCase() + t.slice(1)}
-            </button>
-          ))}
-        </nav>
         <div className="data-source">
-          <button type="button" className="btn-sample" onClick={onLoadSampleData} title="Load sample alerts and map data">
-            Load sample data
-          </button>
           {botIds.length > 1 && (
             <select
               value={selectedBot}
@@ -138,30 +135,64 @@ export default function App() {
         </div>
       </header>
 
-      {events.length === 0 && !useLive ? (
-        <div
-          className="drop-zone"
-          onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add('dragover'); }}
-          onDragLeave={(e) => e.currentTarget.classList.remove('dragover')}
-          onDrop={(e) => {
-            e.preventDefault();
-            e.currentTarget.classList.remove('dragover');
-            const f = e.dataTransfer.files?.[0];
-            if (f?.name.endsWith('.jsonl')) onFileDrop(f);
-          }}
-        >
-          Drop events.jsonl here or enable Live and point to collector (e.g. http://127.0.0.1:7777/events).
-        </div>
-      ) : null}
+      <div className="app-body">
+        <aside className="app-sidebar">
+          <nav className="side-nav">
+            {navItems.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                className={`side-nav-item ${tab === item.id ? 'active' : ''}`}
+                onClick={() => setTab(item.id)}
+              >
+                {item.label}
+              </button>
+            ))}
+          </nav>
+          <div className="security-analyst-banner">
+            <h4>OpenClaw Security Analyst</h4>
+            <p className="analyst-trigger">
+              Ask OpenClaw to <strong>triage MoltSOC alerts</strong> or <strong>maintain the SOC</strong> to engage the MoltSOC skill. OpenClaw will act as your Security Analyst.
+            </p>
+            {lastHeartbeat ? (
+              <p className="analyst-heartbeat" title={lastHeartbeat}>
+                Last collector heartbeat: <time>{new Date(lastHeartbeat).toLocaleString()}</time>
+              </p>
+            ) : useLive ? (
+              <p className="analyst-heartbeat muted">Waiting for collector… Run <code>moltsoc start</code>.</p>
+            ) : (
+              <p className="analyst-heartbeat muted">Live off – enable Live and start the collector for heartbeats.</p>
+            )}
+          </div>
+        </aside>
 
-      <main className="panel">
-        {tab === 'timeline' && <Timeline events={displayEvents} />}
-        {tab === 'alerts' && <Alerts events={alertEvents} rules={rules} />}
-        {tab === 'session' && <Session events={displayEvents} selectedBot={selectedBot} botIds={botIds} />}
-        {tab === 'map' && <MapView events={displayEvents} />}
-        {tab === 'rules' && <RulesPanel rules={rules} onSave={persistRules} />}
-        {tab === 'ai' && <AiContext events={displayEvents} rules={rules} />}
-      </main>
+        <main className="app-main">
+          {events.length === 0 && !useLive ? (
+            <div
+              className="drop-zone"
+              onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add('dragover'); }}
+              onDragLeave={(e) => e.currentTarget.classList.remove('dragover')}
+              onDrop={(e) => {
+                e.preventDefault();
+                e.currentTarget.classList.remove('dragover');
+                const f = e.dataTransfer.files?.[0];
+                if (f?.name.endsWith('.jsonl')) onFileDrop(f);
+              }}
+            >
+              Drop events.jsonl here, or enable Live and point to the collector (e.g. http://127.0.0.1:7777/events). Run <code>moltsoc start</code> to start the collector.
+            </div>
+          ) : (
+          <div className="panel">
+            {tab === 'timeline' && <Timeline events={displayEvents} />}
+            {tab === 'alerts' && <Alerts events={alertEvents} rules={rules} />}
+            {tab === 'session' && <Session events={displayEvents} selectedBot={selectedBot} botIds={botIds} />}
+            {tab === 'map' && <MapView events={displayEvents} />}
+            {tab === 'rules' && <RulesPanel rules={rules} onSave={persistRules} />}
+            {tab === 'ai' && <AiContext events={displayEvents} rules={rules} />}
+          </div>
+          )}
+        </main>
+      </div>
     </div>
   );
 }
