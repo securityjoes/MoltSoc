@@ -120,6 +120,20 @@ function openUrl(url) {
   spawn(cmd, [], { shell: true, stdio: 'ignore' });
 }
 
+function addToPathWindows(installDir) {
+  const scriptPath = path.join(ROOT, 'scripts', 'add-path.ps1');
+  if (!fs.existsSync(scriptPath)) return;
+  return new Promise((resolve) => {
+    const ps = spawn(
+      'powershell',
+      ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', scriptPath, '-TargetDir', installDir],
+      { cwd: ROOT, stdio: 'inherit', shell: false }
+    );
+    ps.on('error', () => resolve());
+    ps.on('close', (code) => resolve(code));
+  });
+}
+
 async function cmdInstall() {
   console.log('MoltSOC install – installing dependencies for collector and dashboard...\n');
   if (!fs.existsSync(COLLECTOR_DIR) || !fs.existsSync(DASHBOARD_DIR)) {
@@ -135,8 +149,24 @@ async function cmdInstall() {
     console.error('Install failed:', e.message);
     process.exit(1);
   }
+
+  if (process.platform === 'win32') {
+    const scriptPath = path.join(ROOT, 'scripts', 'add-path.ps1');
+    if (fs.existsSync(scriptPath)) {
+      console.log('\nAdding MoltSOC to your PATH (Windows)...');
+      try {
+        await addToPathWindows(ROOT);
+      } catch (_) {
+        console.log('Could not update PATH automatically. Run: .\\scripts\\add-path.ps1 -TargetDir "' + ROOT + '"');
+      }
+    }
+  }
+
   console.log('\n✓ Install complete.\n');
   console.log('Next steps:');
+  if (process.platform === 'win32') {
+    console.log('  Restart your terminal, then:');
+  }
   console.log('  1. moltsoc start          – start the collector (scans OpenClaw logs/configs)');
   console.log('  2. moltsoc dashboard      – open the dashboard in your browser');
   console.log('  3. Optional: openclaw plugins install ./plugin/moltsoc  – add OpenClaw plugin\n');

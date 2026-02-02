@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 
-export function Alerts({ events, rules }) {
+export function Alerts({ events, rules, severityFilter, ruleFilter, onClearFilter }) {
   const [drawer, setDrawer] = useState(null);
   const byRule = useMemo(() => {
     const map = {};
@@ -12,12 +12,41 @@ export function Alerts({ events, rules }) {
     return map;
   }, [events]);
 
-  const rows = Object.entries(byRule);
+  let rows = Object.entries(byRule);
+  if (severityFilter) {
+    rows = rows.filter(([, list]) => list.some((e) => (e.severity || 'info') === severityFilter));
+    const filtered = [];
+    rows.forEach(([rule, list]) => {
+      filtered.push([rule, list.filter((e) => (e.severity || 'info') === severityFilter)]);
+    });
+    rows = filtered;
+  }
+  if (ruleFilter) {
+    rows = rows.filter(([rule]) => rule === ruleFilter);
+  }
+
+  const hasFilter = severityFilter || ruleFilter;
 
   return (
     <>
+      {hasFilter && (
+        <div className="alerts-filter-banner">
+          <span className="alerts-filter-label">
+            Filter: {severityFilter ? `severity = ${severityFilter}` : ''} {ruleFilter ? `rule = ${ruleFilter}` : ''}
+          </span>
+          <button type="button" className="alerts-filter-clear" onClick={onClearFilter}>
+            Clear filter
+          </button>
+        </div>
+      )}
       {rows.length === 0 && (
-        <p className="alerts-empty">No alerts in this dataset. Drop <code>sample-events.jsonl</code> (with Live off) to load test alerts, or enable Live when the collector is running.</p>
+        <p className="alerts-empty">
+          {hasFilter ? 'No alerts match the current filter.' : 'No alerts in this dataset. Enable Live when the collector is running, or load events.'}
+          {hasFilter && ' '}
+          {hasFilter && onClearFilter && (
+            <button type="button" className="link-button" onClick={onClearFilter}>Clear filter</button>
+          )}
+        </p>
       )}
       <div className="table-wrap">
         <table>

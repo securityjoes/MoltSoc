@@ -1,6 +1,7 @@
 const EVENTS_URL = 'http://127.0.0.1:7777/events';
 const STREAM_PATH = '/stream';
-const POLL_MS = 2000;
+const POLL_MS = 5000;
+const INITIAL_FETCH_MAX = 2000;
 
 export const DEFAULT_RULES = [
   { id: 'GATEWAY_UNREACHABLE', name: 'Gateway unreachable', severity: 'high', threshold: 1, enabled: true, description: 'Fires when OpenClaw logs show ECONNREFUSED to 127.0.0.1 or localhost (gateway not reachable).', examplePayload: 'Error: connect ECONNREFUSED 127.0.0.1:7777' },
@@ -46,7 +47,8 @@ export async function fetchEvents(url, signal) {
   const res = await fetch(url, { signal });
   if (!res.ok) throw new Error(res.statusText);
   const data = await res.json();
-  return Array.isArray(data) ? data : [];
+  const arr = Array.isArray(data) ? data : [];
+  return arr.length > INITIAL_FETCH_MAX ? arr.slice(-INITIAL_FETCH_MAX) : arr;
 }
 
 export async function fetchEventsSince(url, since, signal) {

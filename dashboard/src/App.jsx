@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { Overview } from './Overview';
 import { Timeline } from './Timeline';
 import { Alerts } from './Alerts';
 import { Session } from './Session';
@@ -8,16 +9,22 @@ import { AiContext } from './AiContext';
 import { loadEventsFromFile, connectLive, fetchEvents, DEFAULT_RULES } from './data';
 
 const EVENTS_URL = 'http://127.0.0.1:7777/events';
-const MAX_EVENTS = 10000;
+const MAX_EVENTS = 2000;
+const LIVE_BATCH_MS = 800;
 const OPENCLAW_DASHBOARD_URL = typeof import.meta !== 'undefined' && import.meta.env?.VITE_OPENCLAW_DASHBOARD_URL ? import.meta.env.VITE_OPENCLAW_DASHBOARD_URL : '';
 
 export default function App() {
   const [events, setEvents] = useState([]);
-  const [tab, setTab] = useState('timeline');
+  const [tab, setTab] = useState('overview');
   const [useLive, setUseLive] = useState(true);
   const [endpoint, setEndpoint] = useState(EVENTS_URL);
   const [selectedBot, setSelectedBot] = useState('');
   const [liveError, setLiveError] = useState(null);
+  const [alertFilter, setAlertFilter] = useState(null);
+  const navigateToAlerts = useCallback((filter) => {
+    setAlertFilter(filter && (filter.severity || filter.rule) ? filter : null);
+    setTab('alerts');
+  }, []);
   const disconnectRef = useRef(null);
   const [rules, setRules] = useState(() => {
     try {
@@ -44,23 +51,45 @@ export default function App() {
     setLiveError(null);
     const ac = new AbortController();
     fetchEvents(endpoint, ac.signal).then((initial) => {
-      setEvents(initial.slice(-MAX_EVENTS));
+      const capped = Array.isArray(initial) ? initial.slice(-MAX_EVENTS) : [];
+      setEvents(capped);
     }).catch(() => setEvents([]));
-    const disconnect = connectLive(endpoint, (newEvents) => {
+
+    let pending = [];
+    let batchTimer = null;
+    const flush = () => {
+      if (pending.length === 0) return;
+      const toMerge = pending;
+      pending = [];
+      batchTimer = null;
       setEvents((prev) => {
-        const next = [...newEvents, ...prev];
+        const next = [...toMerge, ...prev];
         const seen = new Set();
-        return next.filter((e) => {
-          const k = e.ts + (e.summary || '');
+        const deduped = next.filter((e) => {
+          const k = (e.ts || '') + (e.summary || '') + (e.type || '');
           if (seen.has(k)) return false;
           seen.add(k);
           return true;
-        }).slice(0, MAX_EVENTS);
+        });
+        return deduped.slice(0, MAX_EVENTS);
       });
+    };
+
+    const disconnect = connectLive(endpoint, (newEvents) => {
+      if (!Array.isArray(newEvents) || newEvents.length === 0) return;
+      pending.push(...newEvents);
+      if (!batchTimer) {
+        batchTimer = window.setTimeout(flush, LIVE_BATCH_MS);
+      }
     }, (err) => setLiveError(err?.message || 'Live connection failed'));
-    disconnectRef.current = disconnect;
+
+    disconnectRef.current = () => {
+      if (batchTimer) clearTimeout(batchTimer);
+      disconnect();
+    };
     return () => {
       ac.abort();
+      if (batchTimer) clearTimeout(batchTimer);
       if (disconnectRef.current) disconnectRef.current();
     };
   }, [useLive, endpoint]);
@@ -90,6 +119,7 @@ export default function App() {
   });
 
   const navItems = [
+    { id: 'overview', label: 'Overview' },
     { id: 'timeline', label: 'Timeline' },
     { id: 'alerts', label: 'Alerts' },
     { id: 'session', label: 'Session' },
@@ -131,7 +161,7 @@ export default function App() {
             onChange={(e) => setEndpoint(e.target.value)}
             placeholder="http://127.0.0.1:7777/events"
           />
-          {liveError && <span className="live-error" title={liveError}>⚠ SSE fallback</span>}
+          {liveError && <span className="live-error" title={liveError}>SSE fallback</span>}
         </div>
       </header>
 
@@ -183,8 +213,23 @@ export default function App() {
             </div>
           ) : (
           <div className="panel">
+            {tab === 'overview' && (
+              <Overview
+                events={displayEvents}
+                onNavigateToAlerts={navigateToAlerts}
+                onNavigateToRule={(rule) => navigateToAlerts({ rule })}
+              />
+            )}
             {tab === 'timeline' && <Timeline events={displayEvents} />}
-            {tab === 'alerts' && <Alerts events={alertEvents} rules={rules} />}
+            {tab === 'alerts' && (
+              <Alerts
+                events={alertEvents}
+                rules={rules}
+                severityFilter={alertFilter?.severity}
+                ruleFilter={alertFilter?.rule}
+                onClearFilter={() => setAlertFilter(null)}
+              />
+            )}
             {tab === 'session' && <Session events={displayEvents} selectedBot={selectedBot} botIds={botIds} />}
             {tab === 'map' && <MapView events={displayEvents} />}
             {tab === 'rules' && <RulesPanel rules={rules} onSave={persistRules} />}

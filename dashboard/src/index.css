@@ -1,19 +1,20 @@
 :root {
-  --bg: #0f1419;
-  --surface: #1a2332;
-  --border: #2d3a4d;
+  --bg: #0c1117;
+  --surface: #161b22;
+  --border: #30363d;
   --text: #e6edf3;
   --muted: #8b949e;
-  --info: #58a6ff;
+  --info: #388bfd;
   --low: #3fb950;
   --medium: #d29922;
   --high: #f85149;
   --critical: #da3633;
-  --font: 'JetBrains Mono', 'Fira Code', ui-monospace, monospace;
+  --font: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: ui-monospace, 'Cascadia Mono', 'SF Mono', monospace;
 }
 
 * { box-sizing: border-box; }
-body { margin: 0; font-family: var(--font); font-size: 13px; background: var(--bg); color: var(--text); min-height: 100vh; }
+body { margin: 0; font-family: var(--font); font-size: 13px; background: var(--bg); color: var(--text); min-height: 100vh; line-height: 1.5; }
 #root { min-height: 100vh; }
 
 .app { display: flex; flex-direction: column; min-height: 100vh; }
@@ -111,8 +112,36 @@ tr:hover { background: var(--surface); }
 .filter-row input, .filter-row select { padding: 6px 10px; background: var(--surface); border: 1px solid var(--border); color: var(--text); border-radius: 4px; font-family: inherit; }
 .bot-selector { padding: 6px 10px; background: var(--surface); border: 1px solid var(--border); color: var(--text); border-radius: 4px; font-family: inherit; min-width: 140px; }
 .live-error { color: var(--medium); font-size: 11px; margin-left: 4px; }
+.alerts-filter-banner { display: flex; align-items: center; gap: 12px; padding: 10px 14px; margin-bottom: 12px; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; }
+.alerts-filter-label { color: var(--muted); font-size: 12px; }
+.alerts-filter-clear { padding: 4px 12px; background: transparent; border: 1px solid var(--border); color: var(--info); border-radius: 4px; cursor: pointer; font-family: inherit; font-size: 12px; }
+.alerts-filter-clear:hover { background: var(--border); }
+.link-button { background: none; border: none; color: var(--info); cursor: pointer; font-family: inherit; font-size: inherit; text-decoration: underline; padding: 0; margin-left: 4px; }
 .alerts-empty { color: var(--muted); margin: 0 0 16px 0; font-size: 13px; }
 .alerts-empty code { font-size: 12px; }
+
+.overview { padding: 0 4px; }
+.overview-kpis { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 12px; margin-bottom: 24px; }
+.kpi-card { display: flex; flex-direction: column; align-items: flex-start; padding: 16px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; cursor: pointer; transition: border-color 0.15s, background 0.15s; text-align: left; font-family: inherit; }
+.kpi-card:hover { border-color: var(--info); background: rgba(56, 139, 253, 0.06); }
+.kpi-value { font-size: 1.5rem; font-weight: 600; color: var(--text); line-height: 1.2; }
+.kpi-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; margin-top: 4px; }
+.kpi-card.kpi-critical .kpi-value { color: var(--critical); }
+.kpi-card.kpi-high .kpi-value { color: var(--high); }
+.kpi-card.kpi-medium .kpi-value { color: var(--medium); }
+.kpi-card.kpi-alerts .kpi-value { color: var(--info); }
+.overview-charts { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px; }
+@media (max-width: 900px) { .overview-charts { grid-template-columns: 1fr; } }
+.overview-chart-card { padding: 20px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; }
+.overview-chart-card h3 { margin: 0 0 4px 0; font-size: 14px; font-weight: 600; color: var(--text); }
+.chart-hint { margin: 0 0 12px 0; font-size: 11px; color: var(--muted); }
+.chart-empty { padding: 40px 20px; text-align: center; color: var(--muted); font-size: 13px; }
+.overview-chart-full { grid-column: 1 / -1; }
+.chart-clickable { cursor: pointer; }
+.chart-bar-clickable { cursor: pointer; }
+.recharts-default-tooltip { padding: 8px 12px; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; font-size: 12px; }
+.recharts-legend-item-text { color: var(--muted); font-size: 12px; }
+.recharts-cartesian-axis-tick-value { fill: var(--muted); font-size: 11px; }
 .drawer-btn { padding: 4px 8px; background: var(--surface); border: 1px solid var(--border); color: var(--info); border-radius: 4px; cursor: pointer; font-family: inherit; font-size: 12px; }
 .alert-drawer-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 100; display: flex; align-items: center; justify-content: center; }
 .alert-drawer { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; max-width: 480px; width: 90%; max-height: 80vh; overflow: auto; }

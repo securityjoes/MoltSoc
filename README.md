@@ -21,8 +21,9 @@
 
 | Path | Description |
 |------|-------------|
-| `moltsoc.cmd` | Windows launcher: run `moltsoc.cmd <command>` or add repo to PATH and run `moltsoc <command>`. |
+| `moltsoc.cmd` | Windows launcher: run `moltsoc.cmd <command>`. After `moltsoc install`, the repo is added to PATH so `moltsoc` works from any terminal (restart terminal first). |
 | `moltsoc` | macOS/Linux launcher: run `./moltsoc <command>` or add repo to PATH and run `moltsoc <command>`. |
+| `scripts/add-path.ps1` | Windows: adds the MoltSOC repo directory to your user PATH (run automatically by `moltsoc install`). |
 | `cli/` | MoltSOC CLI implementation: `install`, `start`, `stop`, `status`, `dashboard`, `update`, `uninstall`, `help`. |
 | `collector/` | Security telemetry collector: tails OpenClaw logs and polls CLI status, emits events and alerts, serves HTTP API on `127.0.0.1:7777`. |
 | `dashboard/` | SOC dashboard: side menu, timeline, alerts, session view, map, rules, AI context, and OpenClaw Security Analyst panel. |
@@ -38,11 +39,11 @@
    cd MoltSoc
    ```
 
-2. **Install** (one command – installs collector + dashboard deps)
+2. **Install** (one command – installs collector + dashboard deps and, on Windows, adds MoltSOC to your PATH)
    ```powershell
-   moltsoc install
+   moltsoc.cmd install
    ```
-   On **Windows**: run `moltsoc.cmd install` from the repo folder, or add the repo folder to your PATH and run `moltsoc install`. On **macOS/Linux**: run `./moltsoc install`, or add the repo folder to your PATH and run `moltsoc install`.
+   On **Windows**: run `moltsoc.cmd install` from the repo folder. The install script adds the repo folder to your user PATH (via `scripts/add-path.ps1`), so after you **restart your terminal** you can run `moltsoc` from anywhere. On **macOS/Linux**: run `./moltsoc install`; add the repo folder to your PATH if you want `moltsoc` from anywhere.
 
 3. **Start the collector** (scans OpenClaw logs/configs; use `--background` to run in background)
    ```powershell
@@ -74,10 +75,10 @@
 | `moltsoc uninstall` | Stop collector, remove runtime data (`.moltsoc`). Use `--full` to also remove `node_modules` in collector and dashboard for a clean reinstall. |
 | `moltsoc help` | Show help. |
 
-**Running moltsoc:** All commands are under the `moltsoc` CLI. Use the included launchers so you never need npm for the command itself:
+**Running moltsoc:** All commands are under the `moltsoc` CLI:
 
-- **Windows:** From the repo folder run `moltsoc.cmd <command>` (e.g. `moltsoc.cmd install`). To use `moltsoc` without `.cmd`, add the repo folder to your PATH so `moltsoc install` runs `moltsoc.cmd`.
-- **macOS/Linux:** From the repo folder run `./moltsoc <command>`. To use `moltsoc` from anywhere, add the repo folder to your PATH and ensure `moltsoc` is executable (`chmod +x moltsoc`).
+- **Windows:** Run `moltsoc.cmd install` once from the repo folder; this installs deps and adds the repo to your PATH via `scripts/add-path.ps1`. Restart your terminal, then you can run `moltsoc` from anywhere. Until then, use `moltsoc.cmd <command>` from the repo folder.
+- **macOS/Linux:** Run `./moltsoc <command>` from the repo folder. To use `moltsoc` from anywhere, add the repo folder to your PATH and run `chmod +x moltsoc`.
 
 ---
 
