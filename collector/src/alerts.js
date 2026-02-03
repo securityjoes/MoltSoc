@@ -10,6 +10,7 @@ const TOOL_FAILURE_THRESHOLD = 10;
 const TOOL_FAILURE_WINDOW_MS = 60_000;
 
 const lastErrors = new Map();
+const LAST_ERRORS_MAX_KEYS = 500;
 const authFailureTimestamps = [];
 const toolFailureTimestamps = [];
 
@@ -83,6 +84,10 @@ export function checkLine(line, ts, opts = {}) {
   }
 
   const key = getKey(line);
+  if (lastErrors.size >= LAST_ERRORS_MAX_KEYS && !lastErrors.has(key)) {
+    const firstKey = lastErrors.keys().next().value;
+    if (firstKey !== undefined) lastErrors.delete(firstKey);
+  }
   if (!lastErrors.has(key)) lastErrors.set(key, []);
   const arr = lastErrors.get(key);
   arr.push(now);

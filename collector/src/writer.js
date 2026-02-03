@@ -29,9 +29,12 @@ function notifyStream(event) {
 }
 
 export function writeEvent(event, redact = true) {
-  const e = JSON.parse(JSON.stringify(event));
-  if (redact && e.details?.raw_line) {
+  const e = { ...event };
+  if (e.details) {
     e.details = { ...e.details };
+    if (Array.isArray(e.details.evidence)) e.details.evidence = [...e.details.evidence];
+  }
+  if (redact && e.details?.raw_line) {
     e.details.raw_line_hash = crypto.createHash('sha256').update(e.details.raw_line).digest('hex');
     delete e.details.raw_line;
   }
@@ -43,7 +46,7 @@ export function writeEvent(event, redact = true) {
 }
 
 export function getEvents() {
-  return [...eventsBuffer];
+  return eventsBuffer.slice();
 }
 
 export function getEventsSince(ts) {

@@ -15,18 +15,21 @@ export const DEFAULT_RULES = [
   { id: 'TOOL_FAILURE_RATE', name: 'Tool failure rate', severity: 'high', threshold: 10, enabled: true, description: 'Tool error lines exceed N per minute.', examplePayload: '10+ tool error lines in 1m' }
 ];
 
+const MAX_FILE_EVENTS = 5000;
+
 export function loadEventsFromFile(file) {
   return new Promise((resolve, reject) => {
     const r = new FileReader();
     r.onload = () => {
       const lines = r.result.split(/\r?\n/).filter(Boolean);
-      const events = lines.map((line) => {
+      const parsed = lines.map((line) => {
         try {
           return JSON.parse(line);
         } catch (_) {
           return null;
         }
       }).filter(Boolean);
+      const events = parsed.length > MAX_FILE_EVENTS ? parsed.slice(-MAX_FILE_EVENTS) : parsed;
       resolve(events);
     };
     r.onerror = () => reject(r.error);

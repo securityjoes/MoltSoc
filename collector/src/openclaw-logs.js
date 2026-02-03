@@ -28,7 +28,7 @@ function watchFile(logPath, redact, processLine) {
   };
 
   fs.watch(logPath, { persistent: true }, () => tick());
-  setInterval(tick, 1000);
+  setInterval(tick, 3000);
 }
 
 export function startOpenClawLogs(logPath, opts) {

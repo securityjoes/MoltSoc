@@ -110,6 +110,19 @@ function fetchHealth(url) {
   });
 }
 
+function isDashboardRunning(url) {
+  return new Promise((resolve) => {
+    const u = new URL(url);
+    const req = http.request(
+      { hostname: u.hostname, port: u.port || 80, path: '/', method: 'GET', timeout: 2000 },
+      (res) => { resolve(res.statusCode > 0); }
+    );
+    req.on('error', () => resolve(false));
+    req.on('timeout', () => { req.destroy(); resolve(false); });
+    req.end();
+  });
+}
+
 function openUrl(url) {
   const cmd =
     process.platform === 'win32'
@@ -237,7 +250,13 @@ async function cmdStatus() {
 }
 
 async function cmdDashboard() {
-  console.log('Starting dashboard dev server in background (if not already running)...');
+  const alreadyUp = await isDashboardRunning(DEFAULT_DASHBOARD_URL);
+  if (alreadyUp) {
+    console.log('Dashboard already running at ' + DEFAULT_DASHBOARD_URL);
+    openUrl(DEFAULT_DASHBOARD_URL);
+    return;
+  }
+  console.log('Starting dashboard dev server in background...');
   spawn('npm', ['run', 'dev'], {
     cwd: DASHBOARD_DIR,
     stdio: 'ignore',

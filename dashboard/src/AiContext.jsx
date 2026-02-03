@@ -55,12 +55,15 @@ export function AiContext({ events, rules }) {
   pageContextRef.current = pageContext;
   const contextJson = useMemo(() => JSON.stringify(pageContext, null, 2), [pageContext]);
 
+  const copyTimeoutRef = useRef(null);
   const copy = () => {
     navigator.clipboard.writeText(contextJson).then(() => {
       setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current);
+      copyTimeoutRef.current = setTimeout(() => setCopied(false), 2000);
     });
   };
+  useEffect(() => () => { if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current); }, []);
 
   const sendContextToOpenClaw = () => {
     if (!iframeRef.current?.contentWindow) return;

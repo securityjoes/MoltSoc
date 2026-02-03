@@ -1,6 +1,8 @@
 import http from 'http';
 import { getEvents, getEventsSince, subscribeStream } from './writer.js';
 
+const MAX_RESPONSE_EVENTS = 2000;
+
 export function createServer(port = 7777) {
   const cors = {
     'Access-Control-Allow-Origin': '*',
@@ -29,7 +31,8 @@ export function createServer(port = 7777) {
 
     if (req.method === 'GET' && path === '/events') {
       const since = params.get('since');
-      const events = since ? getEventsSince(since) : getEvents();
+      let events = since ? getEventsSince(since) : getEvents();
+      if (events.length > MAX_RESPONSE_EVENTS) events = events.slice(-MAX_RESPONSE_EVENTS);
       res.writeHead(200, jsonHeaders);
       res.end(JSON.stringify(events));
       return;

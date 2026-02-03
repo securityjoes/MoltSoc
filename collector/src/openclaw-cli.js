@@ -5,6 +5,7 @@ import { writeEvent } from './writer.js';
 import { emitAlert } from './alerts.js';
 
 const POLL_INTERVAL_MS = 10_000;
+const CMD_TIMEOUT_MS = 15_000;
 const RESTART_LOOP_THRESHOLD = 3;
 const RESTART_LOOP_WINDOW_MS = 5 * 60 * 1000;
 
@@ -18,10 +19,22 @@ function runCmd(args) {
     const proc = spawn('openclaw', args, { shell: true, windowsHide: true });
     let stdout = '';
     let stderr = '';
+    const timeout = setTimeout(() => {
+      try {
+        proc.kill('SIGTERM');
+      } catch (_) {}
+      resolve({ code: -1, stdout, stderr, timedOut: true });
+    }, CMD_TIMEOUT_MS);
     proc.stdout?.on('data', (d) => { stdout += d.toString(); });
     proc.stderr?.on('data', (d) => { stderr += d.toString(); });
-    proc.on('close', (code) => resolve({ code, stdout, stderr }));
-    proc.on('error', () => resolve({ code: -1, stdout: '', stderr: 'openclaw not in PATH' }));
+    proc.on('close', (code) => {
+      clearTimeout(timeout);
+      resolve({ code, stdout, stderr });
+    });
+    proc.on('error', () => {
+      clearTimeout(timeout);
+      resolve({ code: -1, stdout: '', stderr: 'openclaw not in PATH' });
+    });
   });
 }
 
@@ -133,6 +146,21 @@ export function startOpenClawCli(opts) {
     lastStatus = statusParsed;
   };
 
-  tick();
-  setInterval(tick, POLL_INTERVAL_MS);
+  let tickScheduled = false;
+  let tickInProgress = false;
+  const scheduleTick = () => {
+    if (tickInProgress) {
+      tickScheduled = true;
+      return;
+    }
+    tickInProgress = true;
+    tickScheduled = false;
+    tick()
+      .finally(() => {
+        tickInProgress = false;
+        if (tickScheduled) scheduleTick();
+      });
+  };
+  scheduleTick();
+  setInterval(scheduleTick, POLL_INTERVAL_MS);
 }
